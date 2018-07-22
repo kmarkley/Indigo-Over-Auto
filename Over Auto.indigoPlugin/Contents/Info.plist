@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PluginVersion</key>
+	<string>0.0.0</string>
+	<key>ServerApiVersion</key>
+	<string>2.0</string>
+	<key>IwsApiVersion</key>
+	<string>1.0.0</string>
+	<key>CFBundleDisplayName</key>
+	<string>Over Auto</string>
+	<key>CFBundleName</key>
+	<string>Over Auto</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.morris.over-auto</string>
+	<key>CFBundleVersion</key>
+	<string>1.0.1</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>https://github.com/kmarkley/Indigo-Over-Auto</string>
+		</dict>
+	</array>
+	<key>GithubInfo</key>
+	<dict>
+		<key>GithubRepo</key>
+		<string>Indigo-Over-Auto</string>
+		<key>GithubUser</key>
+		<string>kmarkley</string>
+	</dict>
+</dict>
+</plist>

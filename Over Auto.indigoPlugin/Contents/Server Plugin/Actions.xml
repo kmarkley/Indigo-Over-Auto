@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<Actions>
+    <Action id="cancelOverride" deviceFilter="self" uiPath="DeviceActions">
+		<Name>Cancel Override</Name>
+		<CallbackMethod>cancelOverride</CallbackMethod>
+	</Action>
+</Actions>

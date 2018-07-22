@@ -1,0 +1,225 @@
+<?xml version="1.0"?>
+<Devices>
+	<Device type="relay" id="OverAutoDevice">
+		<Name>Over Auto Device</Name>
+		<ConfigUI>
+			<Field id='description' type='label'>
+                <Label>Turns devices on/off automatically or by override.</Label>
+            </Field>
+			<Field id='auto_separator' type='separator'/>
+			<Field id='auto_section' type='label' fontColor='blue'>
+                <Label>Automatic Control</Label>
+			</Field>
+			<Field id='auto_control_type' type='menu' defaultValue='device'>
+				<Label>Automatic Type</Label>
+				<List>
+					<Option value='device'>Device State</Option>
+					<Option value='variable'>Variable Value</Option>
+				</List>
+			</Field>
+			<Field id='autoSpacer0' type='label'>
+				<Label>    </Label>
+			</Field>
+			<Field id='auto_device_id' type='menu' visibleBindingId='auto_control_type' visibleBindingValue='device'>
+				<Label>Device:</Label>
+				<List class='indigo.devices' />
+				<CallbackMethod>dummyCallback</CallbackMethod>
+			</Field>
+			<Field id='auto_state_key' type='menu' visibleBindingId='auto_control_type' visibleBindingValue='device'>
+				<Label>State:</Label>
+				<List class='self' filter='auto_device_id' method='getDeviceStates' dynamicReload='true'/>
+			</Field>
+			<Field id='auto_variable_id' type='menu' visibleBindingId='auto_control_type' visibleBindingValue='variable'>
+                <Label>Variable:</Label>
+                <List class='indigo.variables' />
+            </Field>
+			<Field id='autoSpacer1' type='label'>
+				<Label>    </Label>
+			</Field>
+			<Field id='auto_reverse' type='checkbox' defaultValue='false'>
+				<Label>Reverse Logic:</Label>
+			</Field>
+			<Field id='over_separator' type='separator'/>
+			<Field id='over_section' type='label' fontColor='blue'>
+                <Label>Override Control</Label>
+			</Field>
+			<Field id='over_control_type' type='menu' defaultValue='device'>
+				<Label>Override Type</Label>
+				<List>
+					<Option value='device'>Device State</Option>
+					<Option value='variable'>Variable Value</Option>
+					<Option value='insteon'>Insteon Command Received</Option>
+					<Option value='zwave'>Z-Wave Command Received</Option>
+					<Option value='action'>Actions Only</Option>
+				</List>
+			</Field>
+			<Field id='overSpacer0' type='label'>
+				<Label>    </Label>
+			</Field>
+			<Field id='over_device_id' type='menu' visibleBindingId='over_control_type' visibleBindingValue='device' alwaysUseInDialogHeightCalc='true'>
+				<Label>Device:</Label>
+				<List class='indigo.devices' />
+				<CallbackMethod>dummyCallback</CallbackMethod>
+			</Field>
+			<Field id='over_state_key' type='menu' visibleBindingId='over_control_type' visibleBindingValue='device' alwaysUseInDialogHeightCalc='true'>
+				<Label>State:</Label>
+				<List class='self' filter='over_device_id' method='getDeviceStates' dynamicReload='true'/>
+			</Field>
+			<Field id='over_variable_id' type='menu' visibleBindingId='over_control_type' visibleBindingValue='variable'>
+                <Label>Variable:</Label>
+                <List class='indigo.variables' />
+            </Field>
+			<Field id='over_insteon_id' type='menu' visibleBindingId='over_control_type' visibleBindingValue='insteon'>
+				<Label>Device:</Label>
+				<List class='self' method='getInsteonDevices' />
+				<CallbackMethod>dummyCallback</CallbackMethod>
+			</Field>
+			<Field id='over_insteon_button' type='menu' visibleBindingId='over_control_type' visibleBindingValue='insteon'>
+				<Label>Button:</Label>
+				<List class='self' filter='over_insteon_id' method='getInsteonButtons' dynamicReload='true' />
+			</Field>
+			<Field id='over_insteon_command' type='menu' defaultValue='single' visibleBindingId='over_control_type' visibleBindingValue='insteon'>
+				<Label>Command:</Label>
+				<List>
+					<Option value='single'>Single tap (on/off)</Option>
+					<Option value='double'>Double tap (instant on/off)</Option>
+					<Option value='hold'>Hold (brighten/dim)</Option>
+				</List>
+			</Field>
+			<Field id='over_zwave_address' type='menu' visibleBindingId='over_control_type' visibleBindingValue='zwave'>
+				<Label>Device:</Label>
+				<List class='self' method='getZwaveDevices' />
+			</Field>
+			<Field id='overSpacer1' type='label'>
+				<Label>    </Label>
+			</Field>
+			<Field id='on_logic' type='menu' defaultValue='timer'>
+				<Label>ON Logic:</Label>
+				<List>
+					<Option value='timer'>Override and start timer</Option>
+					<Option value='manual'>Override until canceled</Option>
+					<Option value='cancel'>Cancel override</Option>
+					<Option value='ignore'>Ignore</Option>
+				</List>
+			</Field>
+			<Field id='on_timer_cycles' type='textfield' visibleBindingId='on_logic' visibleBindingValue='timer' alwaysUseInDialogHeightCalc='true'>
+				<Label>ON Timer Cycles:</Label>
+			</Field>
+			<Field id='on_timer_units' type='menu' defaultValue='seconds' visibleBindingId='on_logic' visibleBindingValue='timer' alwaysUseInDialogHeightCalc='true'>
+				<Label>ON Timer Units:</Label>
+				<List>
+                    <Option value='seconds'>Seconds</Option>
+                    <Option value='minutes'>Minutes</Option>
+                    <Option value='hours'>Hours</Option>
+                    <Option value='days'>Days</Option>
+                </List>
+			</Field>
+			<Field id='overSpacer2' type='label'>
+				<Label>    </Label>
+			</Field>
+			<Field id='off_logic' type='menu' defaultValue='timer'>
+				<Label>OFF Logic:</Label>
+				<List>
+					<Option value='timer'>Override and start timer</Option>
+					<Option value='manual'>Override until canceled</Option>
+					<Option value='cancel'>Cancel override</Option>
+					<Option value='ignore'>Ignore</Option>
+				</List>
+			</Field>
+			<Field id='off_timer_cycles' type='textfield' visibleBindingId='off_logic' visibleBindingValue='timer' alwaysUseInDialogHeightCalc='true'>
+				<Label>OFF Timer Cycles:</Label>
+			</Field>
+			<Field id='off_timer_units' type='menu' defaultValue='seconds' visibleBindingId='off_logic' visibleBindingValue='timer' alwaysUseInDialogHeightCalc='true'>
+				<Label>OFF Timer Units:</Label>
+				<List>
+                    <Option value='seconds'>Seconds</Option>
+                    <Option value='minutes'>Minutes</Option>
+                    <Option value='hours'>Hours</Option>
+                    <Option value='days'>Days</Option>
+                </List>
+			</Field>
+			<Field id='overSpacer3' type='label'>
+				<Label>    </Label>
+			</Field>
+			<Field id='over_reverse' type='checkbox' defaultValue='false'>
+				<Label>Reverse Logic:</Label>
+			</Field>
+			<Field id="control_separator" type="separator" />
+			<Field id='control_section' type='label' fontColor='blue'>
+                <Label>Devices Controlled</Label>
+			</Field>
+			<Field id='output_device_ids' type='list' rows='8'>
+	            <Label>Devices:</Label>
+                <List class='indigo.devices' filter='indigo.relay, indigo.dimmer, indigo.speedcontrol'/>
+	        </Field>
+			<Field id='speed_control_index' type='menu' defaultValue='3'>
+				<Label>Fan ON level:</Label>
+				<List>
+					<Option value='1'>Low</Option>
+					<Option value='2'>Medium</Option>
+					<Option value='3'>High</Option>
+				</List>
+			</Field>
+			<Field id='dimmer_control_level' type='textfield' defaultValue='100'>
+				<Label>Dimmer ON level:</Label>
+			</Field>
+		</ConfigUI>
+		<States>
+			<State id='mode'>
+                <ValueType>
+                    <List>
+                        <Option value='over'>Override</Option>
+                        <Option value='auto'>Automatic</Option>
+                    </List>
+                </ValueType>
+                <TriggerLabel>Mode Change</TriggerLabel>
+                <TriggerLabelPrefix>Mode is</TriggerLabelPrefix>
+                <ControlPageLabel>Mode</ControlPageLabel>
+                <ControlPageLabelPrefix>Mode is</ControlPageLabelPrefix>
+            </State>
+			<State id='state'>
+                <ValueType>
+                    <List>
+                        <Option value='on-auto'>ON (automatic)</Option>
+						<Option value='off-auto'>OFF (automatic)</Option>
+						<Option value='on-over'>ON (override)</Option>
+						<Option value='off-over'>OFF (override)</Option>
+                    </List>
+                </ValueType>
+                <TriggerLabel>State Change</TriggerLabel>
+                <TriggerLabelPrefix>State is</TriggerLabelPrefix>
+                <ControlPageLabel>State</ControlPageLabel>
+                <ControlPageLabelPrefix>State is</ControlPageLabelPrefix>
+            </State>
+			<State id='state_auto'>
+                <ValueType>Boolean</ValueType>
+                <TriggerLabel>Automatic State</TriggerLabel>
+                <ControlPageLabel>Automatic State</ControlPageLabel>
+            </State>
+			<State id='state_over'>
+                <ValueType>
+					<List>
+						<Option value='true'>True</Option>
+						<Option value='false'>False</Option>
+						<Option value='none'>None</Option>
+					</List>
+				</ValueType>
+                <TriggerLabel>Override State</TriggerLabel>
+				<TriggerLabelPrefix>Override State is</TriggerLabelPrefix>
+                <ControlPageLabel>Override State</ControlPageLabel>
+				<ControlPageLabelPrefix>Override State is</ControlPageLabelPrefix>
+            </State>
+			<State id='on_override_end'>
+				<ValueType>Number</ValueType>
+				<TriggerLabel>ON Override End Time</TriggerLabel>
+                <ControlPageLabel>ON Override End Time</ControlPageLabel>
+			</State>
+			<State id='off_override_end'>
+				<ValueType>Number</ValueType>
+				<TriggerLabel>OFF Override End Time</TriggerLabel>
+                <ControlPageLabel>OFF Override End Time</ControlPageLabel>
+			</State>
+		</States>
+		<UiDisplayStateId>state</UiDisplayStateId>
+	</Device>
+</Devices>
