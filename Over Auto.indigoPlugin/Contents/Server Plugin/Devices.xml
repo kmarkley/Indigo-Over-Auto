@@ -219,6 +219,11 @@
 				<TriggerLabel>OFF Override End Time</TriggerLabel>
                 <ControlPageLabel>OFF Override End Time</ControlPageLabel>
 			</State>
+			<State id='override_remain_short'>
+				<ValueType>String</ValueType>
+				<TriggerLabel>Override Remaining Time</TriggerLabel>
+                <ControlPageLabel>Override Remaining Time</ControlPageLabel>
+			</State>
 		</States>
 		<UiDisplayStateId>state</UiDisplayStateId>
 	</Device>

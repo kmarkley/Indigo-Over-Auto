@@ -260,7 +260,7 @@ class Plugin(indigo.PluginBase):
 ###############################################################################
 class OverAutoBase(threading.Thread):
     # class properties
-    k_update_states = ['onOffState','mode','state','state_auto','state_over','on_override_end','off_override_end']
+    k_update_states = ['onOffState','mode','state','state_auto','state_over','on_override_end','off_override_end','override_remain_short']
     k_triple = {'true':True, 'false':False, 'none':None}
     k_insteon_commands = {'single':('on','off'),'double':('on to 100% (instant)','off (instant)'),'hold':('brighten','dim')}
 
@@ -412,11 +412,15 @@ class OverAutoBase(threading.Thread):
         if tick_time is None:
             tick_time = time.time()
         if (self.state_over is True) and (self.on_logic == 'timer'):
+            self.override_remain_short = getShortTime(self.on_override_end - tick_time)
             if tick_time >= self.on_override_end:
                 self.state_over = None
         elif (self.state_over is False) and (self.off_logic == 'timer'):
+            self.override_remain_short = getShortTime(self.off_override_end - tick_time)
             if tick_time >= self.off_override_end:
                 self.state_over = None
+        else:
+            self.override_remain_short = ''
 
     #-------------------------------------------------------------------------------
     def updateIndigo(self):
@@ -559,6 +563,15 @@ class OverAutoBase(threading.Thread):
     off_override_end = property(_offTimeEndGet,_offTimeEndSet)
 
     #-------------------------------------------------------------------------------
+    def _overrideRemainGet(self):
+        return self.states['override_remain_short']
+    def _overrideRemainSet(self, value):
+        if self.states['override_remain_short'] != value:
+            self.states['override_remain_short'] = value
+            self.state_changed = True
+    override_remain_short = property(_overrideRemainGet,_overrideRemainSet)
+
+    #-------------------------------------------------------------------------------
     # abstract methods
     #-------------------------------------------------------------------------------
     def setOutputState(self, onState):
@@ -605,3 +618,25 @@ def validateTextFieldNumber(rawInput, numType=float, zero=True, negative=True):
         return True
     except:
         return False
+
+################################################################################
+def getShortTime(seconds):
+    minutes = int(seconds/60)
+    # If time is zero (or less) then show nothing
+    if minutes <= 0:
+        return ''
+    # If time is less than 1 min then show <1m
+    elif minutes < 1:
+        return '<1m'
+    # If time is less than 100 min then show XXm
+    elif minutes < 100:
+        return '{:.0f}m'.format(minutes)
+    # If it's less than 49 hours then show XXh
+    elif minutes < 2881:
+        return '{:.0f}h'.format(minutes/60)
+    # If it's less than 100 days then show XXd
+    elif minutes < 144000:
+        return '{:.0f}d'.format(minutes/1440)
+    # If it's anything more than one hundred days then show 99+
+    else:
+        return '99+'
