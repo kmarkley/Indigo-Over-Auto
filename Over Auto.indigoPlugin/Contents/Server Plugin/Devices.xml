@@ -8,7 +8,7 @@
             </Field>
 			<Field id='auto_separator' type='separator'/>
 			<Field id='auto_section' type='label' fontColor='blue'>
-                <Label>Automatic Control</Label>
+                <Label>Automatic</Label>
 			</Field>
 			<Field id='auto_control_type' type='menu' defaultValue='device'>
 				<Label>Automatic Type</Label>
@@ -41,7 +41,7 @@
 			</Field>
 			<Field id='over_separator' type='separator'/>
 			<Field id='over_section' type='label' fontColor='blue'>
-                <Label>Override Control</Label>
+                <Label>Override</Label>
 			</Field>
 			<Field id='over_control_type' type='menu' defaultValue='device'>
 				<Label>Override Type</Label>
@@ -71,7 +71,7 @@
             </Field>
 			<Field id='over_insteon_id' type='menu' visibleBindingId='over_control_type' visibleBindingValue='insteon'>
 				<Label>Device:</Label>
-				<List class='self' method='getInsteonDevices' />
+				<List class='indigo.devices' filter='indigo.insteon'/>
 				<CallbackMethod>dummyCallback</CallbackMethod>
 			</Field>
 			<Field id='over_insteon_button' type='menu' visibleBindingId='over_control_type' visibleBindingValue='insteon'>
@@ -88,7 +88,7 @@
 			</Field>
 			<Field id='over_zwave_address' type='menu' visibleBindingId='over_control_type' visibleBindingValue='zwave'>
 				<Label>Device:</Label>
-				<List class='self' method='getZwaveDevices' />
+				<List class='indigo.devices' filter='indigo.zwave'/>
 			</Field>
 			<Field id='overSpacer1' type='label'>
 				<Label>    </Label>
@@ -146,13 +146,20 @@
 			</Field>
 			<Field id="control_separator" type="separator" />
 			<Field id='control_section' type='label' fontColor='blue'>
-                <Label>Devices Controlled</Label>
+                <Label>Control</Label>
 			</Field>
-			<Field id='output_device_ids' type='list' rows='8'>
+			<Field id='output_type' type='menu' defaultValue='device'>
+				<Label>Control Type</Label>
+				<List>
+					<Option value='device'>Device(s)</Option>
+					<Option value='action'>Action Group</Option>
+				</List>
+			</Field>
+			<Field id='output_device_ids' type='list' rows='8' visibleBindingId='output_type' visibleBindingValue='device'>
 	            <Label>Devices:</Label>
                 <List class='indigo.devices' filter='indigo.relay, indigo.dimmer, indigo.speedcontrol'/>
 	        </Field>
-			<Field id='speed_control_index' type='menu' defaultValue='3'>
+			<Field id='speed_control_index' type='menu' defaultValue='3' visibleBindingId='output_type' visibleBindingValue='device'>
 				<Label>Fan ON level:</Label>
 				<List>
 					<Option value='1'>Low</Option>
@@ -160,9 +167,17 @@
 					<Option value='3'>High</Option>
 				</List>
 			</Field>
-			<Field id='dimmer_control_level' type='textfield' defaultValue='100'>
+			<Field id='dimmer_control_level' type='textfield' defaultValue='100' visibleBindingId='output_type' visibleBindingValue='device'>
 				<Label>Dimmer ON level:</Label>
 			</Field>
+			<Field id='action_on' type='menu' visibleBindingId='output_type' visibleBindingValue='action'>
+	            <Label>ON Action Group:</Label>
+                <List class='indigo.actionGroups'/>
+	        </Field>
+			<Field id='action_off' type='menu' visibleBindingId='output_type' visibleBindingValue='action'>
+	            <Label>OFF Action Group:</Label>
+                <List class='indigo.actionGroups'/>
+	        </Field>
 		</ConfigUI>
 		<States>
 			<State id='mode'>

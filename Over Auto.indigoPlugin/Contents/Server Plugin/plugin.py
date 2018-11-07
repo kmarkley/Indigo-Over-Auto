@@ -138,18 +138,10 @@ class Plugin(indigo.PluginBase):
         return [(state, state) for state in indigo.devices[int(dev_id)].states] if dev_id else []
 
     #-------------------------------------------------------------------------------
-    def getInsteonDevices(self, filter=None, valuesDict=dict(), typeId='', targetId=0):
-        return [(dev.id, dev.name) for dev in indigo.devices.iter(filter='indigo.insteon')]
-
-    #-------------------------------------------------------------------------------
     def getInsteonButtons(self, filter=None, valuesDict=dict(), typeId='', targetId=0):
         dev_id = valuesDict.get(filter,0)
         button_count = indigo.devices[int(dev_id)].buttonGroupCount if dev_id else 0
         return [(i,'Button {}'.format(i)) for i in range(1,button_count+1)]
-
-    #-------------------------------------------------------------------------------
-    def getZwaveDevices(self, filter=None, valuesDict=dict(), typeId='', targetId=0):
-        return [(dev.address, dev.name) for dev in indigo.devices.iter(filter='indigo.zwave')]
 
     #-------------------------------------------------------------------------------
     def getActionGroups(self, filter=None, valuesDict=dict(), typeId='', targetId=0):
@@ -173,7 +165,7 @@ class Plugin(indigo.PluginBase):
             instance.overrideAction(False)
         # TOGGLE
         elif action.deviceAction == indigo.kDeviceAction.Toggle:
-            instance.overrideAction(not instance.state_over)
+            instance.overrideAction(not instance.on_state)
         # UNKNOWN
         else:
             self.logger.debug(u'"{}" {} request ignored'.format(dev.name, action.deviceAction))
@@ -258,7 +250,7 @@ class Plugin(indigo.PluginBase):
 ###############################################################################
 # Classes
 ###############################################################################
-class OverAutoBase(threading.Thread):
+class OverAutoDevice(threading.Thread):
     # class properties
     k_update_states = ['onOffState','mode','state','state_auto','state_over','on_override_end','off_override_end','override_remain_short']
     k_triple = {'true':True, 'false':False, 'none':None}
@@ -266,7 +258,7 @@ class OverAutoBase(threading.Thread):
 
     #-------------------------------------------------------------------------------
     def __init__(self, device, logger):
-        super(OverAutoBase, self).__init__()
+        super(OverAutoDevice, self).__init__()
         self.daemon     = True
         self.cancelled  = False
         self.queue      = Queue.Queue()
@@ -314,11 +306,22 @@ class OverAutoBase(threading.Thread):
         elif self.over_type == 'zwave':
             self.over_zwave_address = self.props['over_zwave_address']
 
+        self.output_type = self.props.get('output_type','device')
+        if self.output_type == 'device':
+            self.output_device_ids = self.props.get('output_device_ids',[])
+            self.speed_control_index = [0,int(self.props.get('speed_control_index',3))]
+            self.dimmer_control_level = [0,int (self.props.get('dimmer_control_level',100))]
+            self.relayControlFunction = [indigo.device.turnOff, indigo.device.turnOn]
+        elif self.output_type == 'action':
+            self.action_on  = int(self.props['action_on'])
+            self.action_off = int(self.props['action_off'])
+
         if self.states['state_over'] == 0:
             self.state_over = None
         self.updateIndigo()
 
         self.start()
+        self.requestStatus()
 
     #-------------------------------------------------------------------------------
     def run(self):
@@ -474,6 +477,27 @@ class OverAutoBase(threading.Thread):
         return result
 
     #-------------------------------------------------------------------------------
+    def setOutputState(self, on_state):
+        if self.output_type == 'device':
+            for device_id in self.output_device_ids:
+                try:
+                    device = indigo.devices[int(device_id)]
+                    if isinstance(device, indigo.SpeedControlDevice):
+                        indigo.speedcontrol.setSpeedIndex(device, self.speedControlIndex[on_state])
+                    elif isinstance(device, indigo.DimmerDevice):
+                        indigo.dimmer.setBrightness(device, self.dimmerControlLevel[on_state])
+                    else:
+                        self.relayControlFunction[on_state](device)
+                except KeyError:
+                    self.logger.error(u'Device {} does not exist.  Reconfigure "{}".'.format(device_id,self.dev.name))
+        elif self.output_type == 'action':
+            try:
+                action_id = [self.action_off,self.action_on][on_state]
+                indigo.actionGroup.execute(self.action_id)
+            except KeyError:
+                self.logger.error(u'Action Group {} does not exist.  Reconfigure "{}".'.format(action_id,self.dev.name))
+
+    #-------------------------------------------------------------------------------
     # properties
     #-------------------------------------------------------------------------------
     @property
@@ -503,7 +527,7 @@ class OverAutoBase(threading.Thread):
         return self.states['state_auto']
     def _autoSet(self, value):
         if self.states['state_auto'] != value:
-            self.logger.debug('"{}" automatic state {}'.format(self.dev.name,value))
+            self.logger.info('"{}" automatic {}'.format(self.dev.name,['off','on'][value]))
             self.states['state_auto'] = value
             self.state_changed = True
     state_auto = property(_autoGet,_autoSet)
@@ -530,14 +554,14 @@ class OverAutoBase(threading.Thread):
             elif self.off_logic == 'ignore':
                 value = self.state_over
         if self.states['state_over'] != str(value).lower:
-            self.logger.debug('"{}" override state {}'.format(self.dev.name,value))
+            self.logger.info('"{}" override {}'.format(self.dev.name,['off','on'][value]))
             self.states['state_over'] = str(value).lower()
             self.state_changed = True
     state_over = property(_overGet,_overSet)
 
     #-------------------------------------------------------------------------------
     def _onStateGet(self):
-        return self.__output
+        return self.states['onOffState']
     def _onStateSet(self, value):
         if self.states['onOffState'] != value:
             self.setOutputState(value)
@@ -571,40 +595,6 @@ class OverAutoBase(threading.Thread):
             self.state_changed = True
     override_remain_short = property(_overrideRemainGet,_overrideRemainSet)
 
-    #-------------------------------------------------------------------------------
-    # abstract methods
-    #-------------------------------------------------------------------------------
-    def setOutputState(self, onState):
-        raise NotImplementedError
-
-###############################################################################
-class OverAutoDevice(OverAutoBase):
-
-    #-------------------------------------------------------------------------------
-    def __init__(self, instance, logger):
-        super(OverAutoDevice, self).__init__(instance, logger)
-
-        self.output_device_ids = self.props.get('output_device_ids',[])
-        self.speed_control_index = [0,int(self.props.get('speed_control_index',3))]
-        self.dimmer_control_level = [0,int (self.props.get('dimmer_control_level',100))]
-        self.relayControlFunction = [indigo.device.turnOff, indigo.device.turnOn]
-
-        self.requestStatus()
-
-    #-------------------------------------------------------------------------------
-    def setOutputState(self, on_state):
-        for device_id in self.output_device_ids:
-            try:
-                device = indigo.devices[int(device_id)]
-                if isinstance(device, indigo.SpeedControlDevice):
-                    indigo.speedcontrol.setSpeedIndex(device, self.speedControlIndex[on_state])
-                elif isinstance(device, indigo.DimmerDevice):
-                    indigo.dimmer.setBrightness(device, self.dimmerControlLevel[on_state])
-                else:
-                    self.relayControlFunction[on_state](device)
-            except KeyError:
-                self.logger.error(u'Device {} does not exist.  Reconfigure "{}".'.format(device_id,self.dev.name))
-
 ################################################################################
 # Utilities
 ################################################################################
@@ -631,12 +621,12 @@ def getShortTime(seconds):
     # If time is less than 100 min then show XXm
     elif minutes < 100:
         return '{:.0f}m'.format(minutes)
-    # If it's less than 49 hours then show XXh
+    # If time is less than 49 hours then show XXh
     elif minutes < 2881:
         return '{:.0f}h'.format(minutes/60)
-    # If it's less than 100 days then show XXd
+    # If time is less than 100 days then show XXd
     elif minutes < 144000:
         return '{:.0f}d'.format(minutes/1440)
-    # If it's anything more than one hundred days then show 99+
+    # If time is anything more than one hundred days then show 99+
     else:
         return '99+'
