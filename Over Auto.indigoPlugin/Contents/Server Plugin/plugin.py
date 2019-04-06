@@ -8,7 +8,6 @@ import indigo
 import threading
 import Queue
 import time
-from ghpu import GitHubPluginUpdater
 
 # Note the "indigo" module is automatically imported and made available inside
 # our global name space by the host process.
@@ -18,8 +17,6 @@ from ghpu import GitHubPluginUpdater
 
 k_commonTrueStates = ['true', 'on', 'open', 'up', 'yes', 'active', 'locked', '1']
 
-k_updateCheckHours = 24
-
 ################################################################################
 class Plugin(indigo.PluginBase):
 
@@ -27,13 +24,10 @@ class Plugin(indigo.PluginBase):
     def __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):
         super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs)
 
-        self.updater = GitHubPluginUpdater(self)
-
     #-------------------------------------------------------------------------------
     # Start, Stop and Config changes
     #-------------------------------------------------------------------------------
     def startup(self):
-        self.nextCheck = self.pluginPrefs.get('nextUpdateCheck',0)
         self.debug = self.pluginPrefs.get("showDebugInfo",False)
         if self.debug:
             self.logger.debug(u"Debug logging enabled")
@@ -46,7 +40,6 @@ class Plugin(indigo.PluginBase):
 
     #-------------------------------------------------------------------------------
     def shutdown(self):
-        self.pluginPrefs['nextUpdateCheck'] = self.nextCheck
         self.pluginPrefs['showDebugInfo'] = self.debug
 
     #-------------------------------------------------------------------------------
@@ -63,8 +56,6 @@ class Plugin(indigo.PluginBase):
                 loop_time = time.time()
                 for instance in self.instance_dict.values():
                     instance.task(instance.tick, loop_time)
-                if loop_time > self.nextCheck:
-                    self.checkForUpdates()
                 self.sleep(1)
         except self.StopThread:
             pass
@@ -191,27 +182,6 @@ class Plugin(indigo.PluginBase):
 
     #-------------------------------------------------------------------------------
     # menu methods
-    #-------------------------------------------------------------------------------
-    def checkForUpdates(self):
-        try:
-            self.updater.checkForUpdate()
-        except Exception as e:
-            msg = u"Check for update error.  Next attempt in {} hours.".format(k_updateCheckHours)
-            if self.debug:
-                self.logger.exception(msg)
-            else:
-                self.logger.error(msg)
-                self.logger.debug(e)
-        self.nextCheck = time.time() + k_updateCheckHours*60*60
-
-    #-------------------------------------------------------------------------------
-    def updatePlugin(self):
-        self.updater.update()
-
-    #-------------------------------------------------------------------------------
-    def forceUpdate(self):
-        self.updater.update(currentVersion='0.0.0')
-
     #-------------------------------------------------------------------------------
     def toggleDebug(self):
         if self.debug:
@@ -344,9 +314,9 @@ class OverAutoDevice(threading.Thread):
 
     #-------------------------------------------------------------------------------
     def task(self, func, *args):
-        # self.queue.put((func, args))
-        func(*args)
-        self.updateIndigo()
+        self.queue.put((func, args))
+        # func(*args)
+        # self.updateIndigo()
 
     #-------------------------------------------------------------------------------
     def cancel(self):
@@ -554,7 +524,10 @@ class OverAutoDevice(threading.Thread):
             elif self.off_logic == 'ignore':
                 value = self.state_over
         if self.states['state_over'] != str(value).lower:
-            self.logger.info('"{}" override {}'.format(self.dev.name,['off','on'][value]))
+            if value is None:
+                self.logger.info('"{}" override cancelled'.format(self.dev.name))
+            else:
+                self.logger.info('"{}" override {}'.format(self.dev.name,['off','on'][value]))
             self.states['state_over'] = str(value).lower()
             self.state_changed = True
     state_over = property(_overGet,_overSet)
@@ -611,7 +584,7 @@ def validateTextFieldNumber(rawInput, numType=float, zero=True, negative=True):
 
 ################################################################################
 def getShortTime(seconds):
-    minutes = int(seconds/60)
+    minutes = seconds/60.0
     # If time is zero (or less) then show nothing
     if minutes <= 0:
         return ''
