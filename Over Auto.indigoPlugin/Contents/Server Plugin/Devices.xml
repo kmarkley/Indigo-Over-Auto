@@ -10,6 +10,9 @@
 			<Field id='auto_section' type='label' fontColor='blue'>
                 <Label>Automatic</Label>
 			</Field>
+			<Field id='auto_help' type='label'>
+                <Label>What input to use for automatic control</Label>
+			</Field>
 			<Field id='auto_control_type' type='menu' defaultValue='device'>
 				<Label>Automatic Type</Label>
 				<List>
@@ -42,6 +45,12 @@
 			<Field id='over_separator' type='separator'/>
 			<Field id='over_section' type='label' fontColor='blue'>
                 <Label>Override</Label>
+			</Field>
+			<Field id='over_help_1' type='label'>
+                <Label>What input to use for override control</Label>
+			</Field>
+			<Field id='over_help_1' type='label'>
+                <Label>(Turning this device on or off will also override)</Label>
 			</Field>
 			<Field id='over_control_type' type='menu' defaultValue='device'>
 				<Label>Override Type</Label>
@@ -92,6 +101,9 @@
 			</Field>
 			<Field id='overSpacer1' type='label'>
 				<Label>    </Label>
+			</Field>
+			<Field id='over_help_3' type='label'>
+                <Label>What override does</Label>
 			</Field>
 			<Field id='on_logic' type='menu' defaultValue='timer'>
 				<Label>ON Logic:</Label>
@@ -147,6 +159,9 @@
 			<Field id="control_separator" type="separator" />
 			<Field id='control_section' type='label' fontColor='blue'>
                 <Label>Control</Label>
+			</Field>
+			<Field id='control_help' type='label'>
+                <Label>What this device is controlling</Label>
 			</Field>
 			<Field id='output_type' type='menu' defaultValue='device'>
 				<Label>Control Type</Label>
