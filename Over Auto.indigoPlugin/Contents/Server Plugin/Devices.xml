@@ -49,7 +49,7 @@
 			<Field id='over_help_1' type='label'>
                 <Label>What input to use for override control</Label>
 			</Field>
-			<Field id='over_help_1' type='label'>
+			<Field id='over_help_2' type='label'>
                 <Label>(Turning this device on or off will also override)</Label>
 			</Field>
 			<Field id='over_control_type' type='menu' defaultValue='device'>
