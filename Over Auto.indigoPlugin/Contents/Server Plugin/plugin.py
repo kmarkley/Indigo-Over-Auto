@@ -6,7 +6,7 @@
 
 import indigo
 import threading
-import Queue
+import queue
 import time
 
 # Note the "indigo" module is automatically imported and made available inside
@@ -117,7 +117,7 @@ class Plugin(indigo.PluginBase):
                 errorsDict['off_timer_cycles'] = "Must be a positive number"
 
         if len(errorsDict) > 0:
-            self.logger.debug(u"validate device config error: \n{}".format(errorsDict))
+            self.logger.debug(f'validate device config error: \n{errorsDict}')
             return (False, valuesDict, errorsDict)
         return (True, valuesDict)
 
@@ -132,7 +132,7 @@ class Plugin(indigo.PluginBase):
     def getInsteonButtons(self, filter=None, valuesDict=dict(), typeId='', targetId=0):
         dev_id = valuesDict.get(filter,0)
         button_count = indigo.devices[int(dev_id)].buttonGroupCount if dev_id else 0
-        return [(i,'Button {}'.format(i)) for i in range(1,button_count+1)]
+        return [(i,f'Button {i}') for i in range(1,button_count+1)]
 
     #-------------------------------------------------------------------------------
     def getActionGroups(self, filter=None, valuesDict=dict(), typeId='', targetId=0):
@@ -145,8 +145,8 @@ class Plugin(indigo.PluginBase):
     #-------------------------------------------------------------------------------
     # action control
     #-------------------------------------------------------------------------------
-    def actionControlDevice(self, action, dev):
-        instance = self.instance_dict[dev.id]
+    def actionControlDevice(self, action, device):
+        instance = self.instance_dict[device.id]
 
         # TURN ON
         if action.deviceAction == indigo.kDeviceAction.TurnOn:
@@ -159,19 +159,19 @@ class Plugin(indigo.PluginBase):
             instance.overrideAction(not instance.on_state)
         # UNKNOWN
         else:
-            self.logger.debug(u'"{}" {} request ignored'.format(dev.name, action.deviceAction))
+            self.logger.debug(f'"{device.name}" {action.deviceAction} request ignored')
 
     #-------------------------------------------------------------------------------
-    def actionControlUniversal(self, action, dev):
-        instance = self.instance_dict[dev.id]
+    def actionControlUniversal(self, action, device):
+        instance = self.instance_dict[device.id]
 
         # STATUS REQUEST
         if action.deviceAction == indigo.kUniversalAction.RequestStatus:
-            self.logger.info('"{}" status update'.format(dev.name))
+            self.logger.info(f'"{device.name}" status update')
             instance.requestStatus()
         # UNKNOWN
         else:
-            self.logger.debug(u'"{}" {} request ignored'.format(dev.name, action.deviceAction))
+            self.logger.debug(f'"{device.name}" {action.deviceAction} request ignored')
 
     #-------------------------------------------------------------------------------
     # custom action callbacks
@@ -231,7 +231,7 @@ class OverAutoDevice(threading.Thread):
         super(OverAutoDevice, self).__init__()
         self.daemon     = True
         self.cancelled  = False
-        self.queue      = Queue.Queue()
+        self.queue      = queue.Queue()
 
         self.logger = logger
 
@@ -295,22 +295,22 @@ class OverAutoDevice(threading.Thread):
 
     #-------------------------------------------------------------------------------
     def run(self):
-        self.logger.debug('"{}" thread started'.format(self.name))
+        self.logger.debug(f'"{self.name}" thread started')
         while not self.cancelled:
             try:
                 func, args = self.queue.get(True,2)
                 try:
                     func(*args)
                 except NotImplementedError:
-                    self.logger.error('"{}" task "{}" not implemented'.format(self.name,func.__name__))
+                    self.logger.error(f'"{self.name}" task "{func.__name__}" not implemented')
                 self.queue.task_done()
-            except Queue.Empty:
+            except queue.Empty:
                 pass
             except Exception as e:
-                self.logger.exception('"{}" thread error \n{}'.format(self.name, e))
+                self.logger.exception(f'"{self.name}" thread error \n{e}')
             self.updateIndigo()
         else:
-            self.logger.debug('"{}" thread cancelled'.format(self.name))
+            self.logger.debug(f'"{self.name}" thread cancelled')
 
     #-------------------------------------------------------------------------------
     def task(self, func, *args):
@@ -324,7 +324,7 @@ class OverAutoDevice(threading.Thread):
 
     #-------------------------------------------------------------------------------
     def deviceUpdated(self, old_dev, new_dev):
-        if new_dev.id == self.dev.id:
+        if new_dev.id == self.device.id:
             self.selfUpdated(new_dev)
         elif new_dev.id == self.auto_device_id:
             if new_dev.states[self.auto_state_key] != old_dev.states[self.auto_state_key]:
@@ -356,7 +356,7 @@ class OverAutoDevice(threading.Thread):
 
     #-------------------------------------------------------------------------------
     def selfUpdated(self, new_dev):
-        self.dev = new_dev
+        self.device = new_dev
         self.states = new_dev.states
 
     #-------------------------------------------------------------------------------
@@ -378,7 +378,7 @@ class OverAutoDevice(threading.Thread):
         elif value in self.k_triple.keys():
             self.state_over = self.k_triple[value]
         else:
-            self.logger.error('"{}" can\'t set override to {}'.format(self.dev.name,value))
+            self.logger.error(f'"{self.device.name}" can\'t set override to {value}')
 
     #-------------------------------------------------------------------------------
     def tick(self, tick_time=None):
@@ -400,7 +400,7 @@ class OverAutoDevice(threading.Thread):
         if self.state_changed:
             self.evaluate()
             state_list = [{'key':key,'value':self.states[key]} for key in self.k_update_states]
-            self.dev.updateStatesOnServer(state_list)
+            self.device.updateStatesOnServer(state_list)
             self.state_changed = False
 
     #-------------------------------------------------------------------------------
@@ -459,20 +459,20 @@ class OverAutoDevice(threading.Thread):
                     else:
                         self.relayControlFunction[on_state](device)
                 except KeyError:
-                    self.logger.error(u'Device {} does not exist.  Reconfigure "{}".'.format(device_id,self.dev.name))
+                    self.logger.error(f'Device {device_id} does not exist.  Reconfigure "{self.device.name}".')
         elif self.output_type == 'action':
             try:
                 action_id = [self.action_off,self.action_on][on_state]
                 indigo.actionGroup.execute(self.action_id)
             except KeyError:
-                self.logger.error(u'Action Group {} does not exist.  Reconfigure "{}".'.format(action_id,self.dev.name))
+                self.logger.error(f'Action Group {action_id} does not exist.  Reconfigure "{self.device.name}".')
 
     #-------------------------------------------------------------------------------
     # properties
     #-------------------------------------------------------------------------------
     @property
     def name(self):
-        return self.dev.name
+        return self.device.name
 
     #-------------------------------------------------------------------------------
     def _stateGet(self):
@@ -497,7 +497,7 @@ class OverAutoDevice(threading.Thread):
         return self.states['state_auto']
     def _autoSet(self, value):
         if self.states['state_auto'] != value:
-            self.logger.info('"{}" automatic {}'.format(self.dev.name,['off','on'][value]))
+            self.logger.info(f'"{self.device.name}" automatic {["off","on"][value]}')
             self.states['state_auto'] = value
             self.state_changed = True
     state_auto = property(_autoGet,_autoSet)
@@ -525,9 +525,9 @@ class OverAutoDevice(threading.Thread):
                 value = self.state_over
         if self.states['state_over'] != str(value).lower:
             if value is None:
-                self.logger.info('"{}" override cancelled'.format(self.dev.name))
+                self.logger.info(f'"{self.device.name}" override cancelled')
             else:
-                self.logger.info('"{}" override {}'.format(self.dev.name,['off','on'][value]))
+                self.logger.info(f'"{self.device.name}" override {["off","on"][value]}')
             self.states['state_over'] = str(value).lower()
             self.state_changed = True
     state_over = property(_overGet,_overSet)
@@ -593,13 +593,13 @@ def getShortTime(seconds):
         return '<1m'
     # If time is less than 100 min then show XXm
     elif minutes < 100:
-        return '{:.0f}m'.format(minutes)
+        return f'{minutes:.0f}m'
     # If time is less than 49 hours then show XXh
     elif minutes < 2881:
-        return '{:.0f}h'.format(minutes/60)
+        return f'{minutes//60:.0f}h'
     # If time is less than 100 days then show XXd
     elif minutes < 144000:
-        return '{:.0f}d'.format(minutes/1440)
+        return f'{minutes//1440:.0f}d'
     # If time is anything more than one hundred days then show 99+
     else:
         return '99+'
